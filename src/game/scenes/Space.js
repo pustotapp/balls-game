@@ -9,7 +9,7 @@ import { getParticleTexture } from "./particles.js";
 
 const GRAV_FORCE = 1e6;
 const GRAV_MAX = 1e3;
-const MAX_BALLS_IN_GAME = 30;
+const MAX_BALLS_IN_GAME = 20;
 
 export class Space extends Scene {
     constructor() {
@@ -157,6 +157,10 @@ export class Space extends Scene {
     }
 
     update() {
+        if (this.ballsGroup.children.size < MAX_BALLS_IN_GAME && this.game.energy.value > 0) {
+            this.ballsGroup.spawnBall();
+        }
+        
         this.background.setTilePosition(this.cameras.main.scrollX);
 
         const tolerance = 3;

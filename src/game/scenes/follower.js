@@ -58,7 +58,7 @@ export class Follower extends Phaser.Physics.Arcade.Sprite {
     }
     
     maybeCreateElement(ball) {
-        const ticket = Phaser.Math.RND.integerInRange(0, 10);
+        const ticket = Phaser.Math.RND.integerInRange(0, 50);
         if (ticket === 1) {
             return FireBall.fromBall(ball);
         } else if (ticket === 2) {

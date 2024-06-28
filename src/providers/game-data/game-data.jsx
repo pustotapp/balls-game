@@ -9,19 +9,18 @@ const initialDataState = {
     },
     blocks: [],
     energy: {
-        max: 1000,
-        value: 1000
+        max: 100,
+        value: 100
     }
 };
 
 const getNewPrice = (currentMax) => {
     if (currentMax === 0) {
         return 50;
-    }
-    if (currentMax === 1) {
-        return 100;
+    } else if (currentMax > 0 && currentMax <= 4) {
+        return currentMax * 100;
     } else {
-        return Math.ceil(Math.exp(currentMax / 4) * 100);
+        return Math.ceil(Math.exp(currentMax / 3) * 100);
     }
 };
 
@@ -61,7 +60,7 @@ export const WithGameData = ({ children }) => {
             ...prevState,
             energy: {
                 ...prevState.energy,
-                value: prevState.energy.value - 1
+                value: Math.max(prevState.energy.value - 1, 0)
             }
         }));
     };
@@ -80,10 +79,6 @@ export const WithGameData = ({ children }) => {
         setGameData(prevState => {
             const unchangedBlocks = prevState.blocks.filter(block => block.type !== type);
             const block = prevState.blocks.find(block => block.type === type);
-            console.dir({
-                unchangedBlocks,
-                block
-            })
             if (!block) {
                 return {
                     ...prevState,
