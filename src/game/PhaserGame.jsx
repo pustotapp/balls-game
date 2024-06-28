@@ -1,6 +1,7 @@
+import { GridItem } from "@chakra-ui/react";
 import PropTypes from "prop-types";
 import { forwardRef, useContext, useEffect, useLayoutEffect, useRef } from "react";
-import { ScoreContext } from "../providers/score/index.js";
+import { GameDataContext } from "../providers/game-data";
 import StartGame from "./main";
 import { EventBus } from "./EventBus";
 
@@ -15,15 +16,16 @@ function getWindowDimensions() {
 const MAX_SPEED = 400;
 const MAX_ENERGY = 100;
 
-export const PhaserGame = forwardRef(function PhaserGame({ score, maxFollowers }, ref) {
+export const PhaserGame = forwardRef(function PhaserGame({}, ref) {
     const game = useRef();
-    const { setScore } = useContext(ScoreContext);
+    
+    const { satellites, addLights, energy, decrementEnergy, addSatellite, incrementBlocksCount } = useContext(GameDataContext);
 
     useLayoutEffect(() => {
         if (game.current === undefined) {
             const { width, height } = getWindowDimensions();
             const gameWidth = Math.min(width, 400);
-            const gameHeight = Math.min(height - 100, 900);
+            const gameHeight = Math.min(height - 200, 900);
             
             game.current = StartGame("game-container", { width: gameWidth, height: gameHeight });
             if (ref !== null) {
@@ -45,34 +47,54 @@ export const PhaserGame = forwardRef(function PhaserGame({ score, maxFollowers }
     
     useEffect(() => {
         if (game.current !== undefined) {
-            game.current.maxFollowers = maxFollowers;
+            game.current.satellites = satellites;
         }
-    }, [maxFollowers, ref])
+    }, [satellites])
     
     useEffect(() => {
-        EventBus.on('character.bounced', ({ energy, speed }) => {
-            const points = Math.floor(energy / MAX_ENERGY * speed / MAX_SPEED);
-            setScore(prevScore => prevScore + points );
-        });
-        EventBus.on('character.follower.added', () => {
-            setScore((prevScore) => prevScore + 9);
-        });
-        EventBus.on('character.follower.bounced', ({ energy, speed }) => {
-            const points = Math.floor(energy / MAX_ENERGY * speed / MAX_SPEED);
-            setScore(prevScore => prevScore + points);
-        });
-        EventBus.on('ball.destroyed', () => {
-            setScore((prevScore) => prevScore + 1);
-        });
-    }, [ref]);
+        if (game.current !== undefined) {
+            game.current.energy = energy;
+        }
+    }, [energy]);
+    
+    let listenersCreated = useRef(false);
+    useEffect(() => {
+        if (listenersCreated.current === false) {
+            EventBus.on('character.bounced', ({ energy, speed }) => {
+                const points = Math.floor(energy / MAX_ENERGY * speed / MAX_SPEED);
+                addLights(points);
+            });
+            EventBus.on('character.satellite.added', () => {
+                const points = 1;
+                addLights(points);
+                addSatellite();
+            });
+            EventBus.on('character.satellite.bounced', ({ energy, speed }) => {
+                const points = Math.floor(energy / MAX_ENERGY * speed / MAX_SPEED);
+                addLights(points);
+            });
+            EventBus.on('ball.destroyed', ({ type }) => {
+                const points = 1;
+                addLights(points);
+                decrementEnergy();
+                
+                if (type) {
+                    incrementBlocksCount(type);
+                }
+            });
+        }
+        return () => {
+            listenersCreated.current = true;
+        }
+    }, []);
 
     return (
-        <div id="game-container"></div>
+        <GridItem area='game' colSpan={4} colStart={1} rowStart={3}>
+            <div id="game-container"></div>
+        </GridItem>
     );
 
 });
 
 PhaserGame.propTypes = {
-    score: PropTypes.number.isRequired,
-    maxFollowers: PropTypes.number.isRequired
 };
